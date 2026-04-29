@@ -92,13 +92,30 @@ const run = async () => {
   app.use(newsRoutes)
   app.use(careersRoutes)
 
+  // Ping route for health check
+  app.get('/api/ping', (req, res) => res.status(200).send('pong'))
+
+  // 404 handler
+  app.use((req, res) => {
+    res.status(404).json({ message: 'Route not found' })
+  })
+
+  // Global Error Handler
+  app.use((err, req, res, next) => {
+    console.error('Global Error:', err)
+    res.status(500).json({ 
+      message: 'Internal Server Error', 
+      error: err.message,
+      path: req.path
+    })
+  })
+
   const selfUrl = process.env.SELF_URL || `http://localhost:${port}`
   cron.schedule('*/5 * * * *', () => {
     request(selfUrl, (err, res, body) => {
       if (err) {
         return console.log('Self-ping failed:', err.message)
       }
-      // console.log('pinged')
     })
   })
   app.listen(port, () => console.log(`Example app listening at PORT:${port}`))
