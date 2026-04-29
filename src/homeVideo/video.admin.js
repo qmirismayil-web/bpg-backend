@@ -43,23 +43,26 @@ const options = {
         list: AdminBro.bundle('../../admin/components/upload-image.list.tsx'),
       },
     },
+    youtubeLinkAz: {
+      type: 'string',
+      isVisible: { list: true, filter: true, show: true, edit: true },
+    },
+    youtubeLinkEng: {
+      type: 'string',
+      isVisible: { list: true, filter: true, show: true, edit: true },
+    },
+    youtubeLinkRu: {
+      type: 'string',
+      isVisible: { list: true, filter: true, show: true, edit: true },
+    },
     uploadVideoAz: {
-      components: {
-        edit: AdminBro.bundle('../../admin/components/upload-video1.edit.tsx'),
-        list: AdminBro.bundle('../../admin/components/upload-video1.list.tsx'),
-      },
+      isVisible: false,
     },
     uploadVideoEng: {
-      components: {
-        edit: AdminBro.bundle('../../admin/components/upload-video2.edit.tsx'),
-        list: AdminBro.bundle('../../admin/components/upload-video2.list.tsx'),
-      },
+      isVisible: false,
     },
     uploadVideoRu: {
-      components: {
-        edit: AdminBro.bundle('../../admin/components/upload-video3.edit.tsx'),
-        list: AdminBro.bundle('../../admin/components/upload-video3.list.tsx'),
-      },
+      isVisible: false,
     },
   },
   actions: {

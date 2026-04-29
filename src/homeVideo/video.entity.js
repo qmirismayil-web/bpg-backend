@@ -35,10 +35,19 @@ const VideoSchema = new mongoose.Schema({
   videoLocationAz: {
     type: String,
   },
+  youtubeLinkAz: {
+    type: String,
+  },
   videoLocationEng: {
     type: String,
   },
+  youtubeLinkEng: {
+    type: String,
+  },
   videoLocationRu: {
+    type: String,
+  },
+  youtubeLinkRu: {
     type: String,
   },
   showImage: {
