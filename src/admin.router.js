@@ -19,8 +19,14 @@ const buildAdminRouter = (admin) => {
       authenticate: async (email, password) => {
          const company = await Company.findOne({ email });
 
-         if (company && await argon2.verify(company.encryptedPassword, password)) {
-            return company.toJSON();
+         if (company && company.encryptedPassword) {
+            try {
+               if (await argon2.verify(company.encryptedPassword, password)) {
+                  return company.toJSON();
+               }
+            } catch (err) {
+               console.error('Password verification error:', err);
+            }
          }
          return null;
       },
