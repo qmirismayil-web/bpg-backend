@@ -1,3 +1,4 @@
+// Final test to force Git to see changes
 const { PageTexts } = require('../../src/PageTexts/PageTexts.entity')
 
 const wrap = (fn) => async (req, res, next) => {
@@ -87,4 +88,3 @@ module.exports.request_get = wrap(async (req, res) => {
   let datum = await PageTexts.find({ pageType: 'request' })
   res.json(datum[0])
 })
-
