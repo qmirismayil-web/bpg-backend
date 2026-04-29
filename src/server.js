@@ -33,6 +33,9 @@ const newsRoutes = require('../api/routes/news')
 const careersRoutes = require('../api/routes/careers')
 
 const run = async () => {
+  // Start listening immediately to prevent Render timeout
+  app.listen(port, () => console.log(`Example app listening at PORT:${port}`))
+
   try {
     console.log('Connecting to database...')
     await mongoose.connect(process.env.DATABASE_URL, {
@@ -42,8 +45,7 @@ const run = async () => {
     console.log('Database connected successfully!')
   } catch (error) {
     console.error('Database connection failed:', error.message)
-    // We still call run() but warn the user. On Render, it's better to log and retry or exit.
-    process.exit(1)
+    // We don't exit here so the server stays up even if DB is slow
   }
   const admin = new AdminBro(options)
   const router = buildAdminRouter(admin)
@@ -116,9 +118,7 @@ const run = async () => {
       if (err) {
         return console.log('Self-ping failed:', err.message)
       }
-    })
   })
-  app.listen(port, () => console.log(`Example app listening at PORT:${port}`))
 }
 
 module.exports = run
