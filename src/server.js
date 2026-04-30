@@ -33,33 +33,29 @@ const newsRoutes = require('../api/routes/news')
 const careersRoutes = require('../api/routes/careers')
 
 const run = async () => {
-  // Start listening immediately to prevent Render timeout
+  //* 1. Critical Middlewares (Must be first)
+  app.use(cors()) 
+  app.use(express.json())
+  app.use(express.static(__dirname + '/public'))
+
+  // 2. Start listening immediately to satisfy Render's health check
   app.listen(port, () => console.log(`Example app listening at PORT:${port}`))
 
-  try {
-    console.log('Connecting to database...')
-    await mongoose.connect(process.env.DATABASE_URL, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    })
+  // 3. Database Connection (Background)
+  mongoose.connect(process.env.DATABASE_URL, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  }).then(() => {
     console.log('Database connected successfully!')
-  } catch (error) {
+  }).catch(error => {
     console.error('Database connection failed:', error.message)
-    // We don't exit here so the server stays up even if DB is slow
-  }
+  })
+
   const admin = new AdminBro(options)
   const router = buildAdminRouter(admin)
 
-  //*middleware
-  app.use(express.static(__dirname + '/public'))
-  app.use(cors({
-    origin: '*',
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
-  }))
-  app.use(express.json())
-
   app.use(admin.options.rootPath, router)
+
   app.use('/uploads', express.static('uploads'))
   app.get('/file/:key', (req, res) => {
     const key = req.params.key
