@@ -90,18 +90,23 @@ const run = async () => {
     res.redirect('/admin')
   })
 
-  // 4. Database Connection
-  try {
-    await mongoose.connect(process.env.DATABASE_URL, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    })
-    console.log('Database connected successfully!')
-  } catch (error) {
-    console.error('Database connection failed:', error.message)
-  }
+  // 4. Start listening IMMEDIATELY (Do not wait for anything)
+  app.listen(port, () => {
+    console.log(`Example app listening at PORT:${port}`)
+    console.log(`CORS is enabled for all origins (*)`)
+  })
 
-  // 5. Error Handlers
+  // 5. Database Connection (Background)
+  mongoose.connect(process.env.DATABASE_URL, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  }).then(() => {
+    console.log('Database connected successfully!')
+  }).catch(error => {
+    console.error('Database connection failed:', error.message)
+  })
+
+  // 6. Error Handlers
   app.use((req, res) => {
     res.status(404).json({ message: 'Route not found', path: req.path })
   })
@@ -109,12 +114,6 @@ const run = async () => {
   app.use((err, req, res, next) => {
     console.error('Global Error:', err)
     res.status(500).json({ message: 'Internal Server Error' })
-  })
-
-  // 6. Start listening (AT THE VERY END)
-  app.listen(port, () => {
-    console.log(`Example app listening at PORT:${port}`)
-    console.log(`CORS is enabled for all origins (*)`)
   })
 
   const selfUrl = process.env.SELF_URL || `https://bpg-admin-panel.onrender.com`
