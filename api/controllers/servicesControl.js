@@ -16,8 +16,12 @@ module.exports.services_get = async (req, res, next) => {
 module.exports.categories_get = async (req, res, next) => {
   try {
     let services = await Service.find()
-    let data = []
-    services.map((item) => data.push(item.service_name))
+    let data = services.map((item) => {
+      if (item && item.service_name) {
+        return item.service_name
+      }
+      return { AZ: '', ENG: '', RU: '' }
+    })
     res.json(data)
   } catch (error) {
     next(error)
@@ -27,7 +31,7 @@ module.exports.categories_get = async (req, res, next) => {
 module.exports.subcategories_get = async (req, res, next) => {
   try {
     let data = await ServiceCategories.find()
-    res.json(data)
+    res.json(data || [])
   } catch (error) {
     next(error)
   }
