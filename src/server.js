@@ -6,10 +6,8 @@ const options = require('./admin.options')
 const buildAdminRouter = require('./admin.router')
 require('dotenv').config()
 const request = require('request')
-const cors = require('cors')
-const app = express()
-const port = process.env.PORT || 5000
-const { getFileStream, generateUploadURL } = require('./S3')
+const getFileStream = require('./S3').getFileStream
+const generateUploadURL = require('./S3').generateUploadURL
 const cron = require('node-cron')
 
 // routes
@@ -33,15 +31,27 @@ const newsRoutes = require('../api/routes/news')
 const careersRoutes = require('../api/routes/careers')
 
 const run = async () => {
-  //* 1. Critical Middlewares (Must be first)
-  app.use(cors()) 
+  const app = express()
+  const port = process.env.PORT || 5000
+
+  // 1. MANUAL RADICAL CORS (No package needed)
+  app.use((req, res, next) => {
+    res.setHeader('Access-Control-Allow-Origin', '*')
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS')
+    res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With, Content-Type, Authorization')
+    if (req.method === 'OPTIONS') {
+      return res.sendStatus(200)
+    }
+    next()
+  })
+
   app.use(express.json())
   app.use(express.static(__dirname + '/public'))
 
-  // 2. Start listening immediately to satisfy Render's health check
+  // 2. Start listening immediately
   app.listen(port, () => console.log(`Example app listening at PORT:${port}`))
 
-  // 3. Database Connection (Background)
+  // 3. Database Connection
   mongoose.connect(process.env.DATABASE_URL, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
@@ -55,22 +65,24 @@ const run = async () => {
   const router = buildAdminRouter(admin)
 
   app.use(admin.options.rootPath, router)
-
   app.use('/uploads', express.static('uploads'))
+  
   app.get('/file/:key', (req, res) => {
     const key = req.params.key
     const readStream = getFileStream(key)
     readStream.pipe(res)
   })
+  
   app.get('/s3Url', async (req, res) => {
     const url = await generateUploadURL()
-    console.log(url)
     res.send({ url })
   })
+
   app.get('/', function (req, res) {
     res.redirect('/admin')
   })
-  //*routes
+
+  // Routes
   app.use(serviceRoutes)
   app.use(selectRoutes)
   app.use(contactRoutes)
@@ -90,15 +102,12 @@ const run = async () => {
   app.use(newsRoutes)
   app.use(careersRoutes)
 
-  // Ping route for health check
   app.get('/api/ping', (req, res) => res.status(200).send('pong'))
 
-  // 404 handler
   app.use((req, res) => {
     res.status(404).json({ message: 'Route not found' })
   })
 
-  // Global Error Handler
   app.use((err, req, res, next) => {
     console.error('Global Error:', err)
     res.status(500).json({ 
@@ -111,9 +120,7 @@ const run = async () => {
   const selfUrl = process.env.SELF_URL || `http://localhost:${port}`
   cron.schedule('*/5 * * * *', () => {
     request(selfUrl, (err, res, body) => {
-      if (err) {
-        return console.log('Self-ping failed:', err.message)
-      }
+      if (err) return console.log('Self-ping failed:', err.message)
     })
   })
 }
