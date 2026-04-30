@@ -118,6 +118,7 @@ const run = async () => {
       if (err) {
         return console.log('Self-ping failed:', err.message)
       }
+    })
   })
 }
 
