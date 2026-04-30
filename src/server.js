@@ -117,7 +117,7 @@ const run = async () => {
     console.log(`CORS is enabled for all origins (*)`)
   })
 
-  const selfUrl = process.env.SELF_URL || `https://bpg-api-service.onrender.com`
+  const selfUrl = process.env.SELF_URL || `https://bpg-admin-panel.onrender.com`
   cron.schedule('*/5 * * * *', () => {
     request(selfUrl, (err, res, body) => {
       if (err) return console.log('Self-ping failed:', err.message)
