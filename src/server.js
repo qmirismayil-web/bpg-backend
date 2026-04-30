@@ -50,7 +50,7 @@ const run = async () => {
   app.use(express.json())
   app.use(express.static('public'))
 
-  // 3. Routes registration (BEFORE listen)
+  // 3. Routes registration (BEFORE AdminBro)
   app.use(serviceRoutes)
   app.use(selectRoutes)
   app.use(contactRoutes)
@@ -72,9 +72,10 @@ const run = async () => {
 
   app.get('/api/ping', (req, res) => res.status(200).send('pong'))
 
+  // 4. AdminBro (Explicit Path)
   const admin = new AdminBro(options)
   const router = buildAdminRouter(admin)
-  app.use(admin.options.rootPath, router)
+  app.use('/admin', router) // Explicitly use /admin path
   app.use('/uploads', express.static('uploads'))
 
   app.get('/file/:key', (req, res) => {
@@ -92,13 +93,13 @@ const run = async () => {
     res.redirect('/admin')
   })
 
-  // 4. Start listening IMMEDIATELY (Do not wait for anything)
+  // 5. Start listening IMMEDIATELY
   app.listen(port, () => {
     console.log(`Example app listening at PORT:${port}`)
     console.log(`CORS is enabled for all origins (*)`)
   })
 
-  // 5. Database Connection (Background)
+  // 6. Database Connection (Background)
   mongoose.connect(process.env.DATABASE_URL, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
@@ -108,7 +109,7 @@ const run = async () => {
     console.error('Database connection failed:', error.message)
   })
 
-  // 6. Error Handlers
+  // 7. Error Handlers
   app.use((req, res) => {
     res.status(404).json({ message: 'Route not found', path: req.path })
   })
