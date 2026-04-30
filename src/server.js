@@ -36,12 +36,20 @@ const run = async () => {
   const port = process.env.PORT || 5000
 
   // 1. STANDARD CORS MIDDLEWARE
+  // app.use(cors({
+  //   origin: true,
+  //   credentials: true,
+  //   methods: 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
+  //   allowedHeaders: 'Origin, X-Requested-With, Content-Type, Accept, Authorization, x-auth-token'
+  // }));
+
   app.use(cors({
-    origin: true,
+    origin: "https://bpgconsulting.az",
     credentials: true,
-    methods: 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
-    allowedHeaders: 'Origin, X-Requested-With, Content-Type, Accept, Authorization, x-auth-token'
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token']
   }));
+  
   app.options('*', cors());
 
   // 2. DISABLE CACHING TO BYPASS STALE PROXIES
