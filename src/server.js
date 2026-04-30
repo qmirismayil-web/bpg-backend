@@ -35,11 +35,11 @@ const run = async () => {
   const app = express()
   const port = process.env.PORT || 5000
 
-  // 1. ABSOLUTE PERMISSIVE CORS
+  // 1. FAIL-SAFE CORS
   app.use(cors())
   app.options('*', cors())
 
-  // 2. NO CACHE HEADERS
+  // 2. HEADERS & CACHE
   app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*')
     res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
@@ -51,7 +51,11 @@ const run = async () => {
   app.use(express.json())
   app.use(express.static('public'))
 
-  // 3. PRIORITIZED API ROUTES
+  // 3. API ROUTES (Standard mounting)
+  const apiRouter = express.Router()
+  
+  // Mount all routers onto the apiRouter
+  // Note: Since routers already have /api in their definitions, we mount on /
   app.use(newsRoutes)
   app.use(serviceRoutes)
   app.use(selectRoutes)
@@ -73,7 +77,7 @@ const run = async () => {
 
   app.get('/api/ping', (req, res) => res.status(200).send('pong'))
 
-  // 4. AdminBro (Mounted on /admin)
+  // 4. AdminBro
   const admin = new AdminBro(options)
   const router = buildAdminRouter(admin)
   app.use('/admin', router)
@@ -99,21 +103,18 @@ const run = async () => {
     console.log(`Server running on port ${port}`)
   })
 
-  // 6. Async DB Connection
+  // 6. DB Connection
   mongoose.connect(process.env.DATABASE_URL, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
   }).catch(err => console.error('DB Error:', err.message))
 
-  // 7. Error handling
+  // 7. Error handling (JSON 404)
   app.use((req, res) => {
-    res.status(404).json({ message: 'Route not found', path: req.path })
-  })
-
-  const selfUrl = process.env.SELF_URL || `https://bpg-admin-panel.onrender.com`
-  cron.schedule('*/5 * * * *', () => {
-    request(selfUrl, (err) => {
-      if (err) console.log('Self-ping failed')
+    res.status(404).json({ 
+      error: 'Route not found', 
+      requestedPath: req.path,
+      availableMethod: req.method
     })
   })
 }
