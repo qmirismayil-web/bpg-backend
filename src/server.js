@@ -46,43 +46,9 @@ const run = async () => {
   })
 
   app.use(express.json())
-  app.use(express.static(__dirname + '/public'))
+  app.use(express.static('public'))
 
-  // 2. Start listening immediately
-  app.listen(port, () => console.log(`Example app listening at PORT:${port}`))
-
-  // 3. Database Connection
-  mongoose.connect(process.env.DATABASE_URL, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  }).then(() => {
-    console.log('Database connected successfully!')
-  }).catch(error => {
-    console.error('Database connection failed:', error.message)
-  })
-
-  const admin = new AdminBro(options)
-  const router = buildAdminRouter(admin)
-
-  app.use(admin.options.rootPath, router)
-  app.use('/uploads', express.static('uploads'))
-  
-  app.get('/file/:key', (req, res) => {
-    const key = req.params.key
-    const readStream = getFileStream(key)
-    readStream.pipe(res)
-  })
-  
-  app.get('/s3Url', async (req, res) => {
-    const url = await generateUploadURL()
-    res.send({ url })
-  })
-
-  app.get('/', function (req, res) {
-    res.redirect('/admin')
-  })
-
-  // Routes
+  // 3. Routes registration (BEFORE listen)
   app.use(serviceRoutes)
   app.use(selectRoutes)
   app.use(contactRoutes)
@@ -104,20 +70,54 @@ const run = async () => {
 
   app.get('/api/ping', (req, res) => res.status(200).send('pong'))
 
+  const admin = new AdminBro(options)
+  const router = buildAdminRouter(admin)
+  app.use(admin.options.rootPath, router)
+  app.use('/uploads', express.static('uploads'))
+  
+  app.get('/file/:key', (req, res) => {
+    const key = req.params.key
+    const readStream = getFileStream(key)
+    readStream.pipe(res)
+  })
+  
+  app.get('/s3Url', async (req, res) => {
+    const url = await generateUploadURL()
+    res.send({ url })
+  })
+
+  app.get('/', (req, res) => {
+    res.redirect('/admin')
+  })
+
+  // 4. Database Connection
+  try {
+    await mongoose.connect(process.env.DATABASE_URL, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    })
+    console.log('Database connected successfully!')
+  } catch (error) {
+    console.error('Database connection failed:', error.message)
+  }
+
+  // 5. Error Handlers
   app.use((req, res) => {
-    res.status(404).json({ message: 'Route not found' })
+    res.status(404).json({ message: 'Route not found', path: req.path })
   })
 
   app.use((err, req, res, next) => {
     console.error('Global Error:', err)
-    res.status(500).json({ 
-      message: 'Internal Server Error', 
-      error: err.message,
-      path: req.path
-    })
+    res.status(500).json({ message: 'Internal Server Error' })
   })
 
-  const selfUrl = process.env.SELF_URL || `http://localhost:${port}`
+  // 6. Start listening (AT THE VERY END)
+  app.listen(port, () => {
+    console.log(`Example app listening at PORT:${port}`)
+    console.log(`CORS is enabled for all origins (*)`)
+  })
+
+  const selfUrl = process.env.SELF_URL || `https://bpg-api-service.onrender.com`
   cron.schedule('*/5 * * * *', () => {
     request(selfUrl, (err, res, body) => {
       if (err) return console.log('Self-ping failed:', err.message)
