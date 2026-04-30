@@ -39,8 +39,8 @@ const run = async () => {
   app.use(cors({
     origin: true,
     credentials: true,
-    methods: 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
-    allowedHeaders: 'Origin, X-Requested-With, Content-Type, Accept, Authorization, x-auth-token'
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization', 'x-auth-token']
   }));
   app.options('*', cors());
 
@@ -81,13 +81,13 @@ const run = async () => {
   const router = buildAdminRouter(admin)
   app.use(admin.options.rootPath, router)
   app.use('/uploads', express.static('uploads'))
-  
+
   app.get('/file/:key', (req, res) => {
     const key = req.params.key
     const readStream = getFileStream(key)
     readStream.pipe(res)
   })
-  
+
   app.get('/s3Url', async (req, res) => {
     const url = await generateUploadURL()
     res.send({ url })
