@@ -44,6 +44,14 @@ const run = async () => {
   }));
   app.options('*', cors());
 
+  // 2. DISABLE CACHING TO BYPASS STALE PROXIES
+  app.use((req, res, next) => {
+    res.header('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.header('Pragma', 'no-cache');
+    res.header('Expires', '0');
+    next();
+  });
+
   app.use(express.json())
   app.use(express.static('public'))
 
