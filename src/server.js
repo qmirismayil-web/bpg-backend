@@ -34,16 +34,22 @@ const run = async () => {
   const app = express()
   const port = process.env.PORT || 5000
 
-  // 1. MANUAL RADICAL CORS (No package needed)
+  // 1. ROBUST FAIL-SAFE CORS MIDDLEWARE
   app.use((req, res, next) => {
-    res.setHeader('Access-Control-Allow-Origin', '*')
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS')
-    res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With, Content-Type, Authorization')
+    const origin = req.headers.origin;
+    // Set origin to requesting origin or *
+    res.header('Access-Control-Allow-Origin', origin || '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, x-auth-token');
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Access-Control-Max-Age', '86400'); // 24 hours
+
+    // Handle Preflight (OPTIONS)
     if (req.method === 'OPTIONS') {
-      return res.sendStatus(200)
+      return res.status(200).end();
     }
-    next()
-  })
+    next();
+  });
 
   app.use(express.json())
   app.use(express.static('public'))
