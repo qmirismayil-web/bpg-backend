@@ -35,22 +35,24 @@ const run = async () => {
   const app = express()
   const port = process.env.PORT || 5000
 
-  // 1. UNIVERSAL PERMISSIVE CORS
-  app.use(cors({ origin: '*' }));
-  app.options('*', cors());
+  // 1. ABSOLUTE PERMISSIVE CORS
+  app.use(cors())
+  app.options('*', cors())
 
-  // 2. DISABLE CACHING TO BYPASS STALE PROXIES
+  // 2. NO CACHE HEADERS
   app.use((req, res, next) => {
-    res.header('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-    res.header('Pragma', 'no-cache');
-    res.header('Expires', '0');
-    next();
-  });
+    res.header('Access-Control-Allow-Origin', '*')
+    res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+    res.header('Access-Control-Allow-Headers', '*')
+    res.header('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
+    next()
+  })
 
   app.use(express.json())
   app.use(express.static('public'))
 
-  // 3. Routes registration (BEFORE AdminBro)
+  // 3. PRIORITIZED API ROUTES
+  app.use(newsRoutes)
   app.use(serviceRoutes)
   app.use(selectRoutes)
   app.use(contactRoutes)
@@ -67,15 +69,14 @@ const run = async () => {
   app.use(teqvimRoutes)
   app.use(teamRoutes)
   app.use(searchRoutes)
-  app.use(newsRoutes)
   app.use(careersRoutes)
 
   app.get('/api/ping', (req, res) => res.status(200).send('pong'))
 
-  // 4. AdminBro (Explicit Path)
+  // 4. AdminBro (Mounted on /admin)
   const admin = new AdminBro(options)
   const router = buildAdminRouter(admin)
-  app.use('/admin', router) // Explicitly use /admin path
+  app.use('/admin', router)
   app.use('/uploads', express.static('uploads'))
 
   app.get('/file/:key', (req, res) => {
@@ -93,36 +94,26 @@ const run = async () => {
     res.redirect('/admin')
   })
 
-  // 5. Start listening IMMEDIATELY
+  // 5. Start listening
   app.listen(port, () => {
-    console.log(`Example app listening at PORT:${port}`)
-    console.log(`CORS is enabled for all origins (*)`)
+    console.log(`Server running on port ${port}`)
   })
 
-  // 6. Database Connection (Background)
+  // 6. Async DB Connection
   mongoose.connect(process.env.DATABASE_URL, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
-  }).then(() => {
-    console.log('Database connected successfully!')
-  }).catch(error => {
-    console.error('Database connection failed:', error.message)
-  })
+  }).catch(err => console.error('DB Error:', err.message))
 
-  // 7. Error Handlers
+  // 7. Error handling
   app.use((req, res) => {
     res.status(404).json({ message: 'Route not found', path: req.path })
   })
 
-  app.use((err, req, res, next) => {
-    console.error('Global Error:', err)
-    res.status(500).json({ message: 'Internal Server Error' })
-  })
-
   const selfUrl = process.env.SELF_URL || `https://bpg-admin-panel.onrender.com`
   cron.schedule('*/5 * * * *', () => {
-    request(selfUrl, (err, res, body) => {
-      if (err) return console.log('Self-ping failed:', err.message)
+    request(selfUrl, (err) => {
+      if (err) console.log('Self-ping failed')
     })
   })
 }
